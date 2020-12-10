@@ -1,0 +1,73 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This is a template to create AWS VPC. The template consists of public and private subnets across 4 availability zones. It deploys an Internet Gateway with a default route on the public subnets. It deploys a NAT Gateway and default routes for them in the private subnet",
+    "Parameters": {
+        "IAMInstanceProfileRole":{
+            "Type": "String",
+            "Description": "IAM Instance Profile Role to be attached on INSTANCE"
+        },
+        "AMI": {
+            "Type": "String",
+            "Description": "AMI-ID for Amazon linux"
+        },
+        "InstanceType": {
+            "Description": "EC2 instance type",
+            "Type": "String",
+            "Default": "t2.micro",
+            "AllowedValues": [
+              "t2.micro",
+              "t2.small",
+              "t3.medium",
+              "t3.large",
+              "m3.medium",
+              "c5.large"
+            ],
+            "ConstraintDescription": "Please choose a valid instance type."
+        },
+        "KeyName": {
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the ECS instances."
+        },
+        "SecurityGroup": {
+            "Type": "String",
+            "Description": "SecurityGroup for jenkins"
+        },
+        "SubnetID": {
+            "Type": "String",
+            "Description": "SubnetID"
+        }
+    },
+    "Resources": {
+        "Jenkins": {
+            "Type" : "AWS::EC2::Instance",
+            "Properties" : {
+                "Affinity" : "default",
+                "IamInstanceProfile" : {"Ref":"IAMInstanceProfileRole"},
+                "ImageId" : {"Ref":"AMI"},
+                "InstanceType" : {"Ref":"InstanceType"},
+                "KeyName" : {"Ref": "KeyName"},
+                "Monitoring" : "true",
+                "SecurityGroupIds" : [ {"Ref":"SecurityGroup"}],
+                "SubnetId" : {"Ref":"SubnetID"},
+                "Tags" : [  
+                    { "Key" : "Name", "Value" : "Jenkins" },
+                    { "Key" : "ApplicationRole", "Value" : "CI/CD" }
+                ],
+                "Tenancy" : "default",
+                "UserData" : {
+                    "Fn::Base64": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "#!/bin/bash -xe\n",
+                          "sudo yum update –y\n",
+                          "sudo yum install -y docker\n",
+                          "sudo service docker start\n"
+                        ]
+                      ]
+                    }
+                  }
+            }
+        }
+    }
+}
